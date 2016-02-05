@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
@@ -23,9 +24,17 @@ func main() {
 	}
 
 	command := strings.ToLower(os.Args[1])
-	if command != "get" && command != "set" {
+	if command != "get" && command != "set" && command != "wait" {
 		printUsage()
 		return
+	}
+	var value string
+	if command == "set" || command == "wait" {
+		if len(os.Args) != 6 {
+			printUsage()
+			return
+		}
+		value = os.Args[5]
 	}
 
 	datasetID := os.Args[2]
@@ -43,18 +52,32 @@ func main() {
 
 	if command == "get" {
 		if err := client.Get(ctx, k, e); err != nil {
-			log.Fatal(err)
+			if err.Error() != "datastore: no such entity" {
+				log.Fatal(err)
+			}
 		}
 		fmt.Println(e.Value)
 	} else if command == "set" {
-		if len(os.Args) != 6 {
-			printUsage()
-			return
-		}
-		value := os.Args[5]
 		e.Value = value
 		if _, err := client.Put(ctx, k, e); err != nil {
 			log.Fatal(err)
+		}
+	} else if command == "wait" {
+		errCount := 0
+		for {
+			if err := client.Get(ctx, k, e); err != nil {
+				if err.Error() != "datastore: no such entity" {
+					errCount++
+					if errCount > 3 {
+						log.Fatal(err)
+					}
+				}
+			} else if e.Value == value {
+				break
+			} else {
+				errCount = 0
+			}
+			time.Sleep(1 * time.Second)
 		}
 	}
 }
@@ -63,4 +86,5 @@ func printUsage() {
 	fmt.Println("usage:")
 	fmt.Println(os.Args[0] + " get <datasetID> <kind> <key>")
 	fmt.Println(os.Args[0] + " set <datasetID> <kind> <key> <value>")
+	fmt.Println(os.Args[0] + " wait <datasetID> <kind> <key> <value>")
 }

@@ -18,4 +18,5 @@ GOOS=linux GOARCH=amd64 go build -o dscmd main.go
 ```
 ./dscmd get <datasetID> <kind> <key>
 ./dscmd set <datasetID> <kind> <key> <value>
+./dscmd wait <datasetID> <kind> <key> <value>  # waiting for stored value is <value>
 ```
