@@ -2,6 +2,11 @@
 
 work on Google Compute Engine
 
+## Scope
+
+* https://www.googleapis.com/auth/datastore
+* https://www.googleapis.com/auth/userinfo.email
+
 ## Build
 
 ```
